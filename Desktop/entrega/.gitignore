@@ -1,0 +1,26 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Uploads (imágenes subidas por usuarios)
+src/public/uploads/*
+!src/public/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Productos JSON (opcional - descomenta si no quieres subir los productos)
+# src/products.json

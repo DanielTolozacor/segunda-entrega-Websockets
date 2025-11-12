@@ -1,0 +1,47 @@
+<!--
+ 
+  VISTA: HOME (Vista Estática)
+ 
+  
+  DESCRIPCIÓN:
+  Esta es una vista tradicional que muestra los productos mediante 
+  renderizado del servidor (Server-Side Rendering).
+  
+  FUNCIONAMIENTO:
+  - Al cargar la página, el servidor consulta la base de datos y 
+    renderiza la lista de productos con Handlebars
+  - NO hay actualización en tiempo real
+  - Para ver nuevos productos, se debe REFRESCAR la página manualmente
+  
+  PERMISOS:
+  - TODOS pueden VER esta lista (pública)
+  - Esta vista es de solo lectura (no se pueden agregar/eliminar productos)
+  
+  USO:
+  Esta vista es útil para mostrar un catálogo público de productos
+  sin necesidad de autenticación o funcionalidad en tiempo real.
+
+-->
+
+<h1>Lista de Productos (Vista Estática)</h1>
+<p><em>Esta es una vista tradicional renderizada por el servidor. Refresca la página para ver cambios.</em></p>
+
+<ul id="productList">
+  {{#each products}}
+    <li>
+      <div>
+        <strong>{{this.name}}</strong> (ID: {{this.id}})<br/>
+        <span>Precio: ${{this.price}}</span><br/>
+        {{#if this.image}}
+          <img src="{{this.image}}" alt="{{this.name}}" class="product-image" />
+        {{/if}}
+      </div>
+    </li>
+  {{else}}
+    <li>No hay productos disponibles</li>
+  {{/each}}
+</ul>
+
+<p class="mt-20">
+  <a href="/login"> Iniciar sesión como administrador</a> para agregar o eliminar productos.
+</p>

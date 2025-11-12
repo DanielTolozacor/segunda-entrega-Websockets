@@ -1,0 +1,81 @@
+<!--
+  
+  VISTA: PRODUCTOS EN TIEMPO REAL (WebSocket Puro)
+  
+  
+  DESCRIPCIÓN:
+  Esta vista utiliza ÚNICAMENTE WebSockets (Socket.io) para toda la 
+  comunicación con el servidor. No se realizan peticiones HTTP tradicionales.
+  
+  FUNCIONAMIENTO:
+  - Al conectarse, el servidor envía la lista completa de productos
+  - Para AGREGAR: se emite evento 'addProduct' por WebSocket
+  - Para ELIMINAR: se emite evento 'deleteProduct' por WebSocket
+  - El servidor responde con evento 'products' que actualiza la lista en TODOS 
+    los clientes conectados en TIEMPO REAL
+  
+  PERMISOS:
+  - TODOS pueden VER la lista de productos
+  - SOLO el ADMINISTRADOR (usuario: coder, contraseña: coder) puede 
+    agregar y eliminar productos
+ 
+-->
+
+<h1> Productos en Tiempo Real (WebSocket Puro)</h1>
+<p><em>Esta vista usa solo WebSockets para comunicación con el servidor</em></p>
+
+<!-- Formulario solo visible para administradores -->
+<div id="admin-section" class="hidden">
+  <h3>Panel de Administración</h3>
+  <form id="product-form" enctype="multipart/form-data">
+    <input type="text" id="name" placeholder="Nombre del producto" required />
+    <input type="file" id="image" accept="image/*" required />
+    <input type="number" id="price" placeholder="Precio" required />
+    <button type="submit" class="btn btn-primary">Agregar producto</button>
+  </form>
+  <button id="logout-btn" class="btn btn-secondary mt-10">Cerrar Sesión</button>
+</div>
+
+<!-- Mensaje para usuarios no autenticados -->
+<div id="guest-section">
+  <p> Solo administradores pueden agregar/eliminar productos. <a href="/login">Iniciar sesión</a></p>
+</div>
+
+<h2>Lista de productos</h2>
+<ul id="productList"></ul>
+
+<!-- Modal para editar producto -->
+<div id="edit-modal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <h3>Editar Producto</h3>
+    <form id="edit-form">
+      <input type="hidden" id="edit-id" />
+      <div class="mb-10">
+        <label>Nombre:</label><br/>
+        <input type="text" id="edit-name" required class="w-100" />
+      </div>
+      <div class="mb-10">
+        <label>Precio:</label><br/>
+        <input type="number" id="edit-price" required class="w-100" />
+      </div>
+      <div class="mb-10">
+        <label>Imagen actual:</label><br/>
+        <img id="edit-current-image" src="" alt="" class="thumb" />
+      </div>
+      <div class="mb-10">
+        <label>Nueva imagen (opcional):</label><br/>
+        <input type="file" id="edit-image" accept="image/*" />
+      </div>
+      <div class="action-buttons">
+        <button type="submit" class="btn btn-success">Guardar</button>
+        <button type="button" id="cancel-edit" class="btn btn-secondary">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden">Producto agregado</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/realtime.js"></script>
+

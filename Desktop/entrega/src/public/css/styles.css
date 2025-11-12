@@ -1,0 +1,264 @@
+
+ /* 
+    Reset básico
+ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 
+    Estilo general del cuerpo
+ */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f0f2f5;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* 
+    Navegación superior
+ */
+nav {
+  background-color: #007bff;
+  padding: 1rem;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+nav a:hover {
+  text-decoration: underline;
+  color: #d4e4ff;
+}
+
+/* 
+   🧱 Contenido principal
+ */
+main {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Utilidades */
+.hidden { display: none !important; }
+.mt-10 { margin-top: 10px; }
+.mt-15 { margin-top: 15px; }
+.mt-20 { margin-top: 20px; }
+.mb-10 { margin-bottom: 10px; }
+.w-100 { width: 100%; }
+
+/* Botones genéricos */
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-primary { background: #007bff; color: #fff; }
+.btn-primary:hover { background: #0056b3; }
+.btn-secondary { background: #6c757d; color: #fff; }
+.btn-secondary:hover { background: #5a6268; }
+.btn-success { background: #28a745; color: #fff; }
+.btn-success:hover { background: #218838; }
+.btn-danger { background: #dc3545; color: #fff; }
+.btn-danger:hover { background: #a71d2a; }
+
+/* Tarjetas / contenedores */
+.card {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+}
+.login-card { max-width: 400px; margin: 50px auto; }
+
+/* Imágenes de producto */
+.product-image { max-width: 200px; margin-top: 10px; border-radius: 4px; }
+.thumb { max-width: 100px; border-radius: 4px; }
+
+/*  Encabezados
+ */
+h1, h2 {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/*  Formulario de productos
+ */
+form {
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+form input {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+form button {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+form button:hover {
+  background-color: #0056b3;
+  transform: scale(1.03);
+}
+
+/*  Lista de productos
+ */
+#productList {
+  list-style: none;
+  padding: 0;
+}
+
+#productList li {
+  background-color: #fff;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+/*  Imagen del producto */
+#productList img {
+  margin-top: 5px;
+  border-radius: 4px;
+  max-width: 100px;
+  height: auto;
+}
+
+/*  Botón de eliminar */
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+  background-color: #a71d2a;
+}
+
+/* Botones de acción dentro de lista */
+.action-buttons { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+
+/*  Animaciones
+ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#productList li.removing {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: all 0.3s ease;
+}
+
+/*  Responsive
+*/
+@media (max-width: 600px) {
+  nav ul {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  form, main {
+    padding: 1rem;
+  }
+
+  form button {
+    font-size: 1rem;
+  }
+}
+
+/*  Toast de notificación
+ */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #333;
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 1000;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.hidden {
+  display: none;
+}
+
+/* Modal genérico */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+}
+.modal-content {
+  background: #fff;
+  margin: 50px auto;
+  padding: 20px;
+  max-width: 500px;
+  border-radius: 8px;
+}
+
+/* Texto utilidades */
+.text-success { color: #28a745; }
+.text-danger { color: #dc3545; }

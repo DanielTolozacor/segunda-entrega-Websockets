@@ -1,0 +1,306 @@
+<!--
+  
+  VISTA: PRODUCTOS HTTP + WebSocket (Híbrida)
+ 
+  
+  DESCRIPCIÓN:
+  Esta vista combina lo mejor de HTTP y WebSockets en un híbrido.
+  
+  FUNCIONAMIENTO:
+  - Para AGREGAR productos: se usa HTTP POST a /api/products
+  - Para ELIMINAR productos: se usa HTTP DELETE a /api/products/:id
+  - El servidor procesa la petición HTTP y luego emite un evento Socket.io
+  - TODOS los clientes conectados reciben la actualización en TIEMPO REAL
+    sin necesidad de refrescar la página
+  
+  VENTAJAS:
+   Compatible con herramientas REST (Postman, curl, etc.)
+   Mejor manejo de errores con códigos HTTP estándar
+   Actualización en tiempo real mediante WebSocket
+   Más fácil de testear y debugear
+  
+  PERMISOS:
+  - TODOS pueden VER la lista de productos
+  - SOLO el ADMINISTRADOR (usuario: coder, contraseña: coder) puede 
+    agregar y eliminar productos
+  
+-->
+
+<h1>🔵 Productos HTTP + WebSocket (Híbrido)</h1>
+<p><em>Esta vista usa HTTP POST/DELETE + WebSocket para actualizaciones en tiempo real</em></p>
+
+<!-- Formulario solo visible para administradores -->
+<div id="admin-section" class="hidden">
+  <h3>Panel de Administración</h3>
+  <form id="product-form" enctype="multipart/form-data">
+    <input type="text" id="name" placeholder="Nombre del producto" required />
+    <input type="file" id="image" accept="image/*" />
+    <input type="number" id="price" placeholder="Precio" required />
+  <button type="submit" class="btn btn-primary">Agregar producto (HTTP POST)</button>
+  </form>
+  <button id="logout-btn" class="btn btn-secondary mt-10">Cerrar Sesión</button>
+</div>
+
+<!-- Mensaje para usuarios no autenticados -->
+<div id="guest-section">
+  <p>⚠️ Solo administradores pueden agregar/eliminar productos. <a href="/login">Iniciar sesión</a></p>
+</div>
+
+<h2>Lista de productos (actualización en tiempo real)</h2>
+<ul id="productList"></ul>
+
+<!-- Modal para editar producto -->
+<div id="edit-modal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <h3>Editar Producto</h3>
+    <form id="edit-form">
+      <input type="hidden" id="edit-id" />
+      <div class="mb-10">
+        <label>Nombre:</label><br/>
+        <input type="text" id="edit-name" required class="w-100" />
+      </div>
+      <div class="mb-10">
+        <label>Precio:</label><br/>
+        <input type="number" id="edit-price" required class="w-100" />
+      </div>
+      <div class="mb-10">
+        <label>Imagen actual:</label><br/>
+        <img id="edit-current-image" src="" alt="" class="thumb" />
+      </div>
+      <div class="mb-10">
+        <label>Nueva imagen (opcional):</label><br/>
+        <input type="file" id="edit-image" accept="image/*" />
+      </div>
+      <div class="action-buttons">
+        <button type="submit" class="btn btn-success">Guardar</button>
+        <button type="button" id="cancel-edit" class="btn btn-secondary">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  const list = document.getElementById('productList');
+  const form = document.getElementById('product-form');
+  const adminSection = document.getElementById('admin-section');
+  const guestSection = document.getElementById('guest-section');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  let isAdmin = false;
+  let sessionId = localStorage.getItem('sessionId');
+
+  // Verificar autenticación
+  async function checkAuth() {
+    if (sessionId) {
+      try {
+        const response = await fetch('/api/auth/check', {
+          headers: { 'session-id': sessionId }
+        });
+        const data = await response.json();
+        isAdmin = data.isAdmin;
+      } catch (error) {
+        isAdmin = false;
+      }
+    }
+    
+    if (isAdmin) {
+      adminSection.classList.remove('hidden');
+      guestSection.classList.add('hidden');
+    } else {
+      adminSection.classList.add('hidden');
+      guestSection.classList.remove('hidden');
+    }
+  }
+
+  // Logout
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      if (sessionId) {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'session-id': sessionId }
+        });
+        localStorage.removeItem('sessionId');
+      }
+      window.location.href = '/login';
+    });
+  }
+
+  checkAuth();
+
+  // Escuchar actualizaciones de productos en tiempo real via WebSocket
+  socket.on('products', products => {
+    list.innerHTML = '';
+    products.forEach(p => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <div>
+          <strong>${p.name}</strong> (ID: ${p.id})<br/>
+          <span>Precio: $${p.price}</span><br/>
+          ${p.image ? `<img src="${p.image}" alt="${p.name}" class="product-image" />` : ''}
+          ${isAdmin ? `
+            <button class="btn btn-secondary" onclick="openEditModal('${p.id}', '${p.name}', ${p.price}, '${p.image}')">✏️ Editar</button>
+            <button class="btn btn-danger" onclick="deleteProduct('${p.id}')">🗑️ Eliminar</button>
+          ` : ''}
+        </div>
+      `;
+      list.appendChild(li);
+    });
+  });
+
+  // Agregar producto usando HTTP POST
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    
+    if (!isAdmin) {
+      alert('Solo administradores pueden agregar productos');
+      return;
+    }
+    
+    const name = document.getElementById('name').value.trim();
+    const price = parseFloat(document.getElementById('price').value);
+    const imageFile = document.getElementById('image').files[0];
+
+    let imageUrl = null;
+
+    // Subir imagen si existe
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      
+      const uploadRes = await fetch('/upload-image', {
+        method: 'POST',
+        body: formData
+      });
+      const uploadData = await uploadRes.json();
+      imageUrl = uploadData.imageUrl;
+    }
+
+    //  Crear producto usando HTTP POST (no WebSocket)
+    const response = await fetch('/api/products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'session-id': sessionId
+      },
+      body: JSON.stringify({ name, price, image: imageUrl })
+    });
+
+    if (response.ok) {
+      form.reset();
+      alert('Producto agregado correctamente');
+      // La actualización llegará automáticamente via WebSocket
+    } else {
+      const error = await response.json();
+      alert('Error: ' + error.error);
+    }
+  });
+
+  //  Eliminar producto usando HTTP DELETE (no WebSocket)
+  async function deleteProduct(id) {
+    if (!isAdmin) {
+      alert('Solo administradores pueden eliminar productos');
+      return;
+    }
+    
+    if (!confirm('¿Eliminar producto?')) return;
+    
+    const response = await fetch(`/api/products/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'session-id': sessionId
+      }
+    });
+
+    if (response.ok) {
+      alert('Producto eliminado');
+      // La actualización llegará automáticamente via WebSocket
+    }
+  }
+
+  // Elementos del modal
+  const editModal = document.getElementById('edit-modal');
+  const editForm = document.getElementById('edit-form');
+  const editIdInput = document.getElementById('edit-id');
+  const editNameInput = document.getElementById('edit-name');
+  const editPriceInput = document.getElementById('edit-price');
+  const editImageInput = document.getElementById('edit-image');
+  const editCurrentImage = document.getElementById('edit-current-image');
+  const cancelEditBtn = document.getElementById('cancel-edit');
+
+  // Abrir modal de edición
+  function openEditModal(id, name, price, image) {
+    if (!isAdmin) {
+      alert('Solo administradores pueden editar productos');
+      return;
+    }
+    
+    editIdInput.value = id;
+    editNameInput.value = name;
+    editPriceInput.value = price;
+  editCurrentImage.src = image;
+  editModal.classList.remove('hidden');
+  }
+
+  // Cerrar modal
+  if (cancelEditBtn) {
+    cancelEditBtn.addEventListener('click', () => {
+      editModal.classList.add('hidden');
+      editForm.reset();
+    });
+  }
+
+  //  Actualizar producto usando HTTP PUT
+  if (editForm) {
+    editForm.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const id = editIdInput.value;
+      const name = editNameInput.value.trim();
+      const price = parseFloat(editPriceInput.value);
+      const imageFile = editImageInput.files[0];
+
+      let imageUrl = editCurrentImage.src.replace(window.location.origin, '');
+
+      // Si hay nueva imagen, subirla
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        
+        try {
+          const uploadRes = await fetch('/upload-image', {
+            method: 'POST',
+            body: formData
+          });
+          const uploadData = await uploadRes.json();
+          imageUrl = uploadData.imageUrl;
+        } catch (err) {
+          alert('Error al subir imagen');
+          return;
+        }
+      }
+
+      //  Actualizar usando HTTP PUT
+      const response = await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'session-id': sessionId
+        },
+        body: JSON.stringify({ name, price, image: imageUrl })
+      });
+
+      if (response.ok) {
+        editModal.classList.add('hidden');
+        editForm.reset();
+        alert('Producto actualizado correctamente');
+        // La actualización llegará automáticamente via WebSocket
+      } else {
+        const error = await response.json();
+        alert('Error: ' + error.error);
+      }
+    });
+  }
+</script>
