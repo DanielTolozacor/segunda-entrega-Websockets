@@ -1,8 +1,36 @@
-import express from 'express';
+import { Router } from 'express';
+import { getProducts } from '../productManager.js';
 
-const viewsrouter = express.Router();
-//endpoint//
-viewsrouter.get('/', (req, res) => {
-  res.render('index');
+const router = Router();
+
+// Ruta de login
+router.get('/login', (req, res) => {
+  res.render('login', {
+    title: 'Login de Administrador'
+  });
 });
-export default viewsrouter;
+
+// Ruta para la vista estática
+router.get('/home', async (req, res) => {
+  const products = await getProducts();
+  res.render('home', {
+    title: 'Home',
+    products
+  });
+});
+
+// Ruta para la vista en tiempo real
+router.get('/realtimeproducts', (req, res) => {
+  res.render('realTimeProducts', {
+    title: 'Productos en tiempo real'
+  });
+});
+
+// Ruta para la vista HTTP + WebSocket híbrida
+router.get('/httpproducts', (req, res) => {
+  res.render('httpProducts', {
+    title: 'Productos HTTP + WebSocket'
+  });
+});
+
+export default router;
